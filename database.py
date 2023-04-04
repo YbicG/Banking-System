@@ -162,7 +162,7 @@ def save_to_user(account_number, information_to_change, value):
         # Fail boolean  
 
         print(e)
-        return e, False
+        return errors.CLIENT_DENIED, False
     
 # Getting a value from an account variable
 def get_from_user(account_number, information_to_get):
@@ -210,7 +210,7 @@ def get_from_user(account_number, information_to_get):
         # Returning empty value of query and fail boolean
 
         print(e)
-        return e, False
+        return errors.CLIENT_DENIED, False
 
 # Printing every user
 def print_users():
@@ -293,7 +293,7 @@ def get_email(email):
         # Returning empty value of query and fail boolean
 
         print(e)
-        return e, False
+        return errors.CLIENT_DENIED, False
     
 
 
@@ -368,7 +368,7 @@ def login(email, password):
         # Returning empty value of query and fail boolean
 
         print(e)
-        return e, False
+        return errors.CLIENT_DENIED, False
     
 def withdraw(account_number, value):
 
@@ -423,7 +423,7 @@ def withdraw(account_number, value):
         # Fail boolean  
 
         print(e)
-        return e, False
+        return errors.CLIENT_DENIED, False
     
 def deposit(account_number, value):
 
@@ -472,4 +472,50 @@ def deposit(account_number, value):
         # Fail boolean  
 
         print(e)
-        return e, False
+        return errors.CLIENT_DENIED, False
+    
+# Making a new account
+def delete_user(account_number, pin):  
+
+    try:
+
+        # Setting up a connection
+
+        connection = connect(
+            host = config["Host"],
+            user = config["Username"],
+            password= config["Password"],
+            database="users"
+        )
+
+        # Formating the query
+
+        query = f"""
+        DELETE FROM user_information
+
+        WHERE
+            account_number = {account_number} AND pin = {pin}
+            
+        """
+        # Executing the query
+
+        with connection.cursor() as cursor:
+            
+            cursor.execute(query)
+            connection.commit()
+
+            # Returning value of query and success boolean  
+            res, success = get_from_user(account_number, "*")
+
+            print(res, success)
+            if success and res != None:
+                return errors.NOT_FOUND, True
+            else:
+                return "DELETED", True
+        
+    except error as e:
+
+        # Returning empty value of query and fail boolean
+
+        print(e)
+        return errors.CLIENT_DENIED, False

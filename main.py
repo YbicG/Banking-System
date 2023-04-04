@@ -17,7 +17,6 @@ db.login("'johnnyappleseed@gmail.com'", "'johnnyappleseed'") | This will work wo
 db.login("johnnyappleseed@gmail.com", "johnnyappleseed") | This will not work
 """
 
-
 db.create_user("'Johnny'", "'Appleseed'", "'johnnyapple@example.com'", "'JohnApple64@#&!'", "'981-18-1989'", "'1982-01-25'", 2246)
 
 db.print_users()
@@ -37,3 +36,7 @@ print("Result: ", result, "\nSucess: ", success)
 result, success = db.deposit(account_number, 1000)
 
 print("Result: ", result, "\nSucess: ", success)
+
+
+print(db.get_from_user(account_number, "pin")[0][0])
+print(db.delete_user(account_number, db.get_from_user(account_number, "pin")[0][0]))
