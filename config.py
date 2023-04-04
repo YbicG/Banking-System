@@ -1,1 +1,1 @@
-config = {"Host":"localhost", "Username":"Owner", "Password":"Bograge146"}
+config = {"Host":"localhost", "Username":"Banking", "Password":"t3sting4C2C"}
