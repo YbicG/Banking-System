@@ -1,7 +1,35 @@
-from getpass import getpass
-from mysql.connector import connect, Error as error
 import random
+import os
+import hashlib
+import errors
+from mysql.connector import connect, Error as error
 from config import config
+
+
+# Hashing of passwords and private information
+
+def hash_str(string: str):
+
+    salt = os.urandom(10)
+
+    salt = salt.hex()
+    salt = salt.encode()
+
+    print(salt)
+
+    hash_digest = hashlib.pbkdf2_hmac('sha256', string.encode(), salt, 10000)
+
+    hash = hash_digest.hex()
+
+    return hash, salt
+
+def hash_str_with_salt(string: str, salt):
+    
+    hash_digest = hashlib.pbkdf2_hmac('sha256', string.encode(), salt, 10000)
+
+    hash = hash_digest.hex()
+
+    return hash, salt
 
 # For creating a table to use for DB, not using anymore
 def create_table():
@@ -18,10 +46,14 @@ def create_table():
             first_name VARCHAR(100),
             last_name VARCHAR(100),
             email VARCHAR(100),
+            password VARCHAR(100),
             social_security_number VARCHAR(100),
             date_of_birth DATE,
             account_number INT,
-            pin INT
+            pin INT,
+            p_salt VARCHAR(100),
+            s_salt VARCHAR(100)
+           
         )
         """
         with connection.cursor() as cursor:
@@ -30,7 +62,15 @@ def create_table():
         print(e)
 
 # Making a new account
-def create_user(first_name, last_name, email, social_security_number, date_of_birth, pin):
+def create_user(first_name, last_name, email, password, social_security_number, date_of_birth, pin):
+
+    #Checking if email already there
+
+    return_value, user_found = get_email(email)
+
+    if user_found and return_value != None:
+        print(errors.ALREADY_EXISTS)
+        return errors.ALREADY_EXISTS, False
 
     # Generating a completely unique UID for an account number
 
@@ -38,7 +78,7 @@ def create_user(first_name, last_name, email, social_security_number, date_of_bi
 
     val, success = get_from_user(uid, "first_name")
 
-    while success != True:
+    while success == True:
 
         val, success = get_from_user(uid, "first_name")
 
@@ -55,13 +95,18 @@ def create_user(first_name, last_name, email, social_security_number, date_of_bi
             database="users"
         )
 
+        # Encrypting password, social security number
+
+        hashed_password, p_salt = hash_str(password)
+        hashed_social_security_number, s_salt = hash_str(social_security_number)
+
         # Formating the query
 
         query = """
-        INSERT INTO user_information(first_name, last_name, email, social_security_number, date_of_birth, account_number, pin)
+        INSERT INTO user_information(first_name, last_name, email, password, social_security_number, date_of_birth, account_number, pin, p_salt, s_salt)
         VALUES
-            ({}, {}, {}, {}, {}, {}, {})
-        """.format(first_name, last_name, email, social_security_number, date_of_birth, uid, pin)   
+            ({}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+        """.format(first_name, last_name, email, f"'{hashed_password}'", f"'{hashed_social_security_number}'", date_of_birth, uid, pin, "\"{}\"".format(p_salt), "\"{}\"".format(s_salt))   
 
         # Executing the query
 
@@ -79,7 +124,7 @@ def create_user(first_name, last_name, email, social_security_number, date_of_bi
         # Returning empty value of query and fail boolean
 
         print(e)
-        return e, False
+        return errors.CLIENT_DENIED, False
 
 # Saving a new value to an account's variable
 def save_to_user(account_number, information_to_change, value):
@@ -153,9 +198,9 @@ def get_from_user(account_number, information_to_get):
 
         # Fetching the values
 
-        value = cursor.fetchone()
+        value = cursor.fetchall()
 
-        if value == None:
+        if value == []:
             return None, False
         
         return_val = value[0]
@@ -205,3 +250,120 @@ def print_users():
 
     except error as e:
         print(e)
+
+# Checking if email exists
+def get_email(email):
+
+    try:
+
+        # Setting up a connection
+
+        connection = connect(
+                host = config["Host"],
+                user = config["Username"],
+                password= config["Password"],
+                database="users"
+            )
+        
+        # Formating the query
+
+        query = """
+        SELECT *
+        FROM user_information
+        WHERE email = {email}
+        """.format(email=email)
+
+        # Executing the query
+
+        cursor = connection.cursor(buffered=True)
+        cursor.execute(query)
+        connection.commit()
+
+        # Fetching the values
+
+        value = cursor.fetchone()
+
+        if value == None:
+            return None, False
+        
+        return_val = value[0]
+
+        # Returning value of query and success boolean  
+
+        return return_val, True
+        
+    except error as e:
+
+        # Returning empty value of query and fail boolean
+
+        print(e)
+        return e, False
+    
+
+
+def sep_bytes(string: str):
+
+    split = string.split("b'")
+    split = split[1].split("'")
+    split = split[0]
+
+    return split
+
+
+# Login function  
+def login(email, password):
+
+    try:
+
+        # Setting up a connection
+
+        connection = connect(
+                host = config["Host"],
+                user = config["Username"],
+                password= config["Password"],
+                database="users"
+            )
+        
+        # Formating the query
+        
+        query = """
+        SELECT password, p_salt, account_number
+        FROM user_information
+        WHERE email = {email}
+        """.format(email=email)
+
+        # Executing the query
+
+        cursor = connection.cursor(buffered=True)
+        cursor.execute(query)
+        connection.commit()
+        
+        # Fetching the values
+
+        value = cursor.fetchall()
+
+        if value == []:
+            return errors.NOT_FOUND, False
+        
+        value = value[0]
+        
+        decoded_salt = sep_bytes(value[1]).encode()
+        # Encrypting password
+        
+        hashed_password, p_salt = hash_str_with_salt(password, decoded_salt)
+
+        # Returning account number and success boolean if password is right
+
+        account_number = value[2] 
+
+        if hashed_password == value[0]:
+            return account_number, True
+        else:
+            return errors.CLIENT_DENIED, False
+        
+    except error as e:
+
+        # Returning empty value of query and fail boolean
+
+        print(e)
+        return e, False
