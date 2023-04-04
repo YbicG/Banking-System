@@ -38,7 +38,7 @@ def create_user(first_name, last_name, email, social_security_number, date_of_bi
 
     val, success = get_from_user(uid, "first_name")
 
-    while success == True:
+    while success != True:
 
         val, success = get_from_user(uid, "first_name")
 
