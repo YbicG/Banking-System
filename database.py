@@ -156,7 +156,7 @@ def get_from_user(account_number, information_to_get):
         value = cursor.fetchone()
 
         if value == None:
-            return [], False
+            return None, False
         
         return_val = value[0]
 
