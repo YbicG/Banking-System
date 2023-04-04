@@ -79,7 +79,7 @@ def create_user(first_name, last_name, email, social_security_number, date_of_bi
         # Returning empty value of query and fail boolean
 
         print(e)
-        return 0, False
+        return e, False
 
 # Saving a new value to an account's variable
 def save_to_user(account_number, information_to_change, value):
@@ -114,14 +114,14 @@ def save_to_user(account_number, information_to_change, value):
 
         # Success boolean  
 
-        return True
+        return None, True
         
     except error as e:
 
         # Fail boolean  
 
         print(e)
-        return False
+        return e, False
     
 # Getting a value from an account variable
 def get_from_user(account_number, information_to_get):
@@ -169,7 +169,7 @@ def get_from_user(account_number, information_to_get):
         # Returning empty value of query and fail boolean
 
         print(e)
-        return [], False
+        return e, False
 
 # Printing every user
 def print_users():
