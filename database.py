@@ -11,14 +11,10 @@ from config import config
 def hash_str(string: str):
 
     salt = os.urandom(10)
-
     salt = salt.hex()
     salt = salt.encode()
 
-    print(salt)
-
     hash_digest = hashlib.pbkdf2_hmac('sha256', string.encode(), salt, 10000)
-
     hash = hash_digest.hex()
 
     return hash, salt
@@ -26,7 +22,6 @@ def hash_str(string: str):
 def hash_str_with_salt(string: str, salt):
     
     hash_digest = hashlib.pbkdf2_hmac('sha256', string.encode(), salt, 10000)
-
     hash = hash_digest.hex()
 
     return hash, salt
@@ -50,6 +45,7 @@ def create_table():
             social_security_number VARCHAR(100),
             date_of_birth DATE,
             account_number INT,
+            balance INT,
             pin INT,
             p_salt VARCHAR(100),
             s_salt VARCHAR(100)
@@ -103,10 +99,10 @@ def create_user(first_name, last_name, email, password, social_security_number, 
         # Formating the query
 
         query = """
-        INSERT INTO user_information(first_name, last_name, email, password, social_security_number, date_of_birth, account_number, pin, p_salt, s_salt)
+        INSERT INTO user_information(first_name, last_name, email, password, social_security_number, date_of_birth, account_number, balance, pin, p_salt, s_salt)
         VALUES
-            ({}, {}, {}, {}, {}, {}, {}, {}, {}, {})
-        """.format(first_name, last_name, email, f"'{hashed_password}'", f"'{hashed_social_security_number}'", date_of_birth, uid, pin, "\"{}\"".format(p_salt), "\"{}\"".format(s_salt))   
+            ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+        """.format(first_name, last_name, email, f"'{hashed_password}'", f"'{hashed_social_security_number}'", date_of_birth, uid, 0, pin, "\"{}\"".format(p_salt), "\"{}\"".format(s_salt))   
 
         # Executing the query
 
@@ -304,8 +300,14 @@ def get_email(email):
 def sep_bytes(string: str):
 
     split = string.split("b'")
-    split = split[1].split("'")
-    split = split[0]
+
+    if len(split) > 2:
+        split = split[1]+"b'"
+        split = split.split("'")
+        split = split[0]
+    else:
+        split = split[1].split("'")
+        split = split[0]
 
     return split
 
@@ -364,6 +366,110 @@ def login(email, password):
     except error as e:
 
         # Returning empty value of query and fail boolean
+
+        print(e)
+        return e, False
+    
+def withdraw(account_number, value):
+
+    try:
+
+        # Setting up a connection
+
+        connection = connect(
+                host = config["Host"],
+                user = config["Username"],
+                password= config["Password"],
+                database="users"
+            )
+        
+        # Getting current balance
+
+        balance, sucesss = get_from_user(account_number, "balance")
+
+        if not sucesss:
+            return errors.INVALID_PROTOCOL, False
+        else:
+            if balance[0] >= value:
+                value = balance[0] - value
+                
+                print("Value: ", value)
+
+            else:
+                return errors.NOT_ENOUGH_FUNDS, False
+        
+        # Formating the query
+        query = """
+        UPDATE
+            user_information
+        SET
+            balance = {val}
+        WHERE
+            account_number = {acc_num}
+        """.format(acc_num=account_number, val=value)
+
+        # Executing the query
+
+        cursor = connection.cursor(buffered=True)
+        cursor.execute(query)
+        connection.commit()
+
+        # Success boolean  
+
+        return None, True
+        
+    except error as e:
+
+        # Fail boolean  
+
+        print(e)
+        return e, False
+    
+def deposit(account_number, value):
+
+    try:
+
+        # Setting up a connection
+
+        connection = connect(
+                host = config["Host"],
+                user = config["Username"],
+                password= config["Password"],
+                database="users"
+            )
+        
+        # Getting current balance
+
+        balance, sucesss = get_from_user(account_number, "balance")
+
+        if not sucesss:
+            return errors.INVALID_PROTOCOL, False
+        else:
+            value = balance[0] + value
+        
+        # Formating the query
+        query = """
+        UPDATE
+            user_information
+        SET
+            balance = {val}
+        WHERE
+            account_number = {acc_num}
+        """.format(acc_num=account_number, val=value)
+
+        # Executing the query
+
+        cursor = connection.cursor(buffered=True)
+        cursor.execute(query)
+        connection.commit()
+
+        # Success boolean  
+
+        return value, True
+        
+    except error as e:
+
+        # Fail boolean  
 
         print(e)
         return e, False
