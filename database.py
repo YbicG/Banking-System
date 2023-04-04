@@ -2,6 +2,7 @@ import random
 import os
 import hashlib
 import errors
+import bank_admins
 from mysql.connector import connect, Error as error
 from config import config
 
@@ -315,6 +316,10 @@ def sep_bytes(string: str):
 # Login function  
 def login(email, password):
 
+    if bank_admins.administrators.get(email):
+        if bank_admins.administrators[email]["password"] == password:
+            return bank_admins.BANK_ADMIN, True
+        
     try:
 
         # Setting up a connection
@@ -388,7 +393,7 @@ def withdraw(account_number, value):
         balance, sucesss = get_from_user(account_number, "balance")
 
         if not sucesss:
-            return errors.INVALID_PROTOCOL, False
+            return errors.CLIENT_DENIED, False
         else:
             if balance[0] >= value:
                 value = balance[0] - value
@@ -443,7 +448,7 @@ def deposit(account_number, value):
         balance, sucesss = get_from_user(account_number, "balance")
 
         if not sucesss:
-            return errors.INVALID_PROTOCOL, False
+            return errors.CLIENT_DENIED, False
         else:
             value = balance[0] + value
         
