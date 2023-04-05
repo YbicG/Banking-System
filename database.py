@@ -388,7 +388,6 @@ def delete_user(account_number, pin):
 
             res, success = get_from_user(account_number, "*")
 
-            print(res, success)
             if success and res != None:
                 return errors.NOT_FOUND, True
             else:
