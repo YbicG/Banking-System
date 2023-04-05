@@ -59,7 +59,7 @@ def create_table():
             social_security_number VARCHAR(100),
             date_of_birth DATE,
             account_number INT,
-            balance INT,
+            balance FLOAT(255, 2),
             pin INT,
             p_salt VARCHAR(100),
             s_salt VARCHAR(100)
@@ -105,7 +105,7 @@ def create_user(first_name, last_name, email, password, social_security_number, 
         INSERT INTO user_information(first_name, last_name, email, password, social_security_number, date_of_birth, account_number, balance, pin, p_salt, s_salt)
         VALUES
             ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
-        """.format(first_name, last_name, email, f"'{hashed_password}'", f"'{hashed_social_security_number}'", date_of_birth, uid, 0, pin, "\"{}\"".format(p_salt), "\"{}\"".format(s_salt))   
+        """.format(first_name, last_name, email, f"'{hashed_password}'", f"'{hashed_social_security_number}'", date_of_birth, uid, 0.00, pin, "\"{}\"".format(p_salt), "\"{}\"".format(s_salt))   
 
         with connection.cursor() as cursor:
             
@@ -291,7 +291,7 @@ def withdraw(account_number, value):
             return errors.NOT_FOUND, False
         else:
             if balance[0] >= value:
-                value = balance[0] - value
+                value = float(balance[0]) - value
                 
                 print("Value: ", value)
 
@@ -335,7 +335,7 @@ def deposit(account_number, value):
         if not sucesss:
             return errors.NOT_FOUND, False
         else:
-            value = balance[0] + value
+            value = float(balance[0]) + value
         
         query = """
         UPDATE
