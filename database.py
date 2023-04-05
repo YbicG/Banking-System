@@ -6,9 +6,7 @@ import bank_admins
 from mysql.connector import connect, Error as error
 from config import config
 
-
-# Hashing of passwords and private information
-
+# ENCRYPTION FUNCTIONS
 def hash_str(string: str):
 
     salt = os.urandom(10)
@@ -27,7 +25,22 @@ def hash_str_with_salt(string: str, salt):
 
     return hash, salt
 
-# For creating a table to use for DB, not using anymore
+def sep_bytes(string: str):
+
+    split = string.split("b'")
+
+    if len(split) > 2:
+        split = split[1]+"b'"
+        split = split.split("'")
+        split = split[0]
+    else:
+        split = split[1].split("'")
+        split = split[0]
+
+    return split
+# END OF ENCRYPTION FUNCTIONS
+
+# CREATION FUNCTIONS
 def create_table():
 
     try:
@@ -58,18 +71,13 @@ def create_table():
     except error as e:
         print(e)
 
-# Making a new account
 def create_user(first_name, last_name, email, password, social_security_number, date_of_birth, pin):
-
-    #Checking if email already there
 
     return_value, user_found = get_email(email)
 
     if user_found and return_value != None:
         print(errors.ALREADY_EXISTS)
         return errors.ALREADY_EXISTS, False
-
-    # Generating a completely unique UID for an account number
 
     uid = random.randint(100000000, 999999999)
 
@@ -83,8 +91,6 @@ def create_user(first_name, last_name, email, password, social_security_number, 
 
     try:
 
-        # Setting up a connection
-
         connection = connect(
             host = config["Host"],
             user = config["Username"],
@@ -92,12 +98,8 @@ def create_user(first_name, last_name, email, password, social_security_number, 
             database="users"
         )
 
-        # Encrypting password, social security number
-
         hashed_password, p_salt = hash_str(password)
         hashed_social_security_number, s_salt = hash_str(social_security_number)
-
-        # Formating the query
 
         query = """
         INSERT INTO user_information(first_name, last_name, email, password, social_security_number, date_of_birth, account_number, balance, pin, p_salt, s_salt)
@@ -105,30 +107,23 @@ def create_user(first_name, last_name, email, password, social_security_number, 
             ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         """.format(first_name, last_name, email, f"'{hashed_password}'", f"'{hashed_social_security_number}'", date_of_birth, uid, 0, pin, "\"{}\"".format(p_salt), "\"{}\"".format(s_salt))   
 
-        # Executing the query
-
         with connection.cursor() as cursor:
             
             cursor.execute(query)
             connection.commit()
 
-            # Returning value of query and success boolean  
-
             return uid, True
         
     except error as e:
 
-        # Returning empty value of query and fail boolean
-
         print(e)
         return errors.CLIENT_DENIED, False
+# END OF CREATION FUNCTIONS
 
-# Saving a new value to an account's variable
+# USER HANDLING FUNCTIONS
 def save_to_user(account_number, information_to_change, value):
 
     try:
-
-        # Setting up a connection
 
         connection = connect(
                 host = config["Host"],
@@ -137,8 +132,6 @@ def save_to_user(account_number, information_to_change, value):
                 database="users"
             )
         
-        # Formating the query
-
         query = """
         UPDATE
             user_information
@@ -148,38 +141,27 @@ def save_to_user(account_number, information_to_change, value):
             account_number = {acc_num}
         """.format(acc_num=account_number, info=information_to_change, val=value)
 
-        # Executing the query
-
         cursor = connection.cursor(buffered=True)
         cursor.execute(query)
         connection.commit()
-
-        # Success boolean  
 
         return None, True
         
     except error as e:
 
-        # Fail boolean  
-
         print(e)
         return errors.CLIENT_DENIED, False
-    
-# Getting a value from an account variable
+
 def get_from_user(account_number, information_to_get):
 
     try:
-
-        # Setting up a connection
 
         connection = connect(
                 host = config["Host"],
                 user = config["Username"],
                 password= config["Password"],
                 database="users"
-            )
-        
-        # Formating the query
+        )
 
         query = """
         SELECT {info}
@@ -187,13 +169,9 @@ def get_from_user(account_number, information_to_get):
         WHERE account_number = {acc_num}
         """.format(acc_num=account_number, info=information_to_get)
 
-        # Executing the query
-
         cursor = connection.cursor(buffered=True)
         cursor.execute(query)
         connection.commit()
-
-        # Fetching the values
 
         value = cursor.fetchall()
 
@@ -202,67 +180,25 @@ def get_from_user(account_number, information_to_get):
         
         return_val = value[0]
 
-        # Returning value of query and success boolean  
-
         return return_val, True
         
     except error as e:
 
-        # Returning empty value of query and fail boolean
-
         print(e)
         return errors.CLIENT_DENIED, False
+# END OF USER HANDLING FUNCTIONS
 
-# Printing every user
-def print_users():
-
-    try:
-
-        # Setting up a connection
-
-        connection = connect(
-                host = config["Host"],
-                user = config["Username"],
-                password= config["Password"],
-                database="users"
-            )
-        
-        # Formating the query
-
-        query = """
-        SELECT *
-        FROM user_information
-        """
-
-        # Executing the query
-
-        cursor = connection.cursor(buffered=True)
-        cursor.execute(query)
-        connection.commit()
-
-        # Receiving all users and printing values
-
-        for i in cursor.fetchall():
-            print(i)
-
-    except error as e:
-        print(e)
-
-# Checking if email exists
+# USER VERIFICATION FUNCTIONS
 def get_email(email):
 
     try:
 
-        # Setting up a connection
-
         connection = connect(
                 host = config["Host"],
                 user = config["Username"],
                 password= config["Password"],
                 database="users"
             )
-        
-        # Formating the query
 
         query = """
         SELECT *
@@ -270,13 +206,9 @@ def get_email(email):
         WHERE email = {email}
         """.format(email=email)
 
-        # Executing the query
-
         cursor = connection.cursor(buffered=True)
         cursor.execute(query)
         connection.commit()
-
-        # Fetching the values
 
         value = cursor.fetchone()
 
@@ -285,35 +217,13 @@ def get_email(email):
         
         return_val = value[0]
 
-        # Returning value of query and success boolean  
-
         return return_val, True
         
     except error as e:
 
-        # Returning empty value of query and fail boolean
-
         print(e)
         return errors.CLIENT_DENIED, False
-    
 
-
-def sep_bytes(string: str):
-
-    split = string.split("b'")
-
-    if len(split) > 2:
-        split = split[1]+"b'"
-        split = split.split("'")
-        split = split[0]
-    else:
-        split = split[1].split("'")
-        split = split[0]
-
-    return split
-
-
-# Login function  
 def login(email, password):
 
     if bank_admins.administrators.get(email):
@@ -322,8 +232,6 @@ def login(email, password):
         
     try:
 
-        # Setting up a connection
-
         connection = connect(
                 host = config["Host"],
                 user = config["Username"],
@@ -331,21 +239,15 @@ def login(email, password):
                 database="users"
             )
         
-        # Formating the query
-        
         query = """
         SELECT password, p_salt, account_number
         FROM user_information
         WHERE email = {email}
         """.format(email=email)
 
-        # Executing the query
-
         cursor = connection.cursor(buffered=True)
         cursor.execute(query)
         connection.commit()
-        
-        # Fetching the values
 
         value = cursor.fetchall()
 
@@ -355,11 +257,8 @@ def login(email, password):
         value = value[0]
         
         decoded_salt = sep_bytes(value[1]).encode()
-        # Encrypting password
-        
-        hashed_password, p_salt = hash_str_with_salt(password, decoded_salt)
 
-        # Returning account number and success boolean if password is right
+        hashed_password, p_salt = hash_str_with_salt(password, decoded_salt)
 
         account_number = value[2] 
 
@@ -370,16 +269,14 @@ def login(email, password):
         
     except error as e:
 
-        # Returning empty value of query and fail boolean
-
         print(e)
         return errors.CLIENT_DENIED, False
-    
+# END OF USER VERIFICATION FUNCTIONS
+
+# BALANCE HANDLING FUNCTIONS
 def withdraw(account_number, value):
 
     try:
-
-        # Setting up a connection
 
         connection = connect(
                 host = config["Host"],
@@ -388,8 +285,6 @@ def withdraw(account_number, value):
                 database="users"
             )
         
-        # Getting current balance
-
         balance, sucesss = get_from_user(account_number, "balance")
 
         if not sucesss:
@@ -403,7 +298,6 @@ def withdraw(account_number, value):
             else:
                 return errors.NOT_ENOUGH_FUNDS, False
         
-        # Formating the query
         query = """
         UPDATE
             user_information
@@ -413,19 +307,13 @@ def withdraw(account_number, value):
             account_number = {acc_num}
         """.format(acc_num=account_number, val=value)
 
-        # Executing the query
-
         cursor = connection.cursor(buffered=True)
         cursor.execute(query)
         connection.commit()
 
-        # Success boolean  
-
         return None, True
         
     except error as e:
-
-        # Fail boolean  
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -434,8 +322,6 @@ def deposit(account_number, value):
 
     try:
 
-        # Setting up a connection
-
         connection = connect(
                 host = config["Host"],
                 user = config["Username"],
@@ -443,7 +329,6 @@ def deposit(account_number, value):
                 database="users"
             )
         
-        # Getting current balance
 
         balance, sucesss = get_from_user(account_number, "balance")
 
@@ -452,7 +337,6 @@ def deposit(account_number, value):
         else:
             value = balance[0] + value
         
-        # Formating the query
         query = """
         UPDATE
             user_information
@@ -462,29 +346,24 @@ def deposit(account_number, value):
             account_number = {acc_num}
         """.format(acc_num=account_number, val=value)
 
-        # Executing the query
 
         cursor = connection.cursor(buffered=True)
         cursor.execute(query)
         connection.commit()
 
-        # Success boolean  
-
         return value, True
         
-    except error as e:
-
-        # Fail boolean  
+    except error as e: 
 
         print(e)
         return errors.CLIENT_DENIED, False
-    
-# Making a new account
+# END OF BALANCE HANDLING FUNCITONS
+
+# DELETION FUNCTIONS  
 def delete_user(account_number, pin):  
 
     try:
 
-        # Setting up a connection
 
         connection = connect(
             host = config["Host"],
@@ -493,7 +372,6 @@ def delete_user(account_number, pin):
             database="users"
         )
 
-        # Formating the query
 
         query = f"""
         DELETE FROM user_information
@@ -502,14 +380,12 @@ def delete_user(account_number, pin):
             account_number = {account_number} AND pin = {pin}
             
         """
-        # Executing the query
 
         with connection.cursor() as cursor:
             
             cursor.execute(query)
             connection.commit()
 
-            # Returning value of query and success boolean  
             res, success = get_from_user(account_number, "*")
 
             print(res, success)
@@ -520,7 +396,34 @@ def delete_user(account_number, pin):
         
     except error as e:
 
-        # Returning empty value of query and fail boolean
-
         print(e)
         return errors.CLIENT_DENIED, False
+# END OF DELETION FUNCTIONS
+
+# EXTRA FUNCTIONS
+def print_users():
+
+    try:
+
+        connection = connect(
+                host = config["Host"],
+                user = config["Username"],
+                password= config["Password"],
+                database="users"
+            )
+
+        query = """
+        SELECT *
+        FROM user_information
+        """
+
+        cursor = connection.cursor(buffered=True)
+        cursor.execute(query)
+        connection.commit()
+
+        for i in cursor.fetchall():
+            print(i)
+
+    except error as e:
+        print(e)
+# END OF EXTRA FUNCTIONS
