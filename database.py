@@ -265,7 +265,7 @@ def login(email, password):
         if hashed_password == value[0]:
             return account_number, True
         else:
-            return errors.CLIENT_DENIED, False
+            return errors.INVALID_PROTOCOL, False
         
     except error as e:
 
@@ -288,7 +288,7 @@ def withdraw(account_number, value):
         balance, sucesss = get_from_user(account_number, "balance")
 
         if not sucesss:
-            return errors.CLIENT_DENIED, False
+            return errors.NOT_FOUND, False
         else:
             if balance[0] >= value:
                 value = balance[0] - value
@@ -333,7 +333,7 @@ def deposit(account_number, value):
         balance, sucesss = get_from_user(account_number, "balance")
 
         if not sucesss:
-            return errors.CLIENT_DENIED, False
+            return errors.NOT_FOUND, False
         else:
             value = balance[0] + value
         

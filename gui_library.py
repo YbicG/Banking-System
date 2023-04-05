@@ -6,6 +6,30 @@ from errors import *
 
 Application = QApplication(sys.argv)
 
+ACCOUNT_NUMBER = None
+
+def display_error(error_type: CustomError):
+    message_box = QMessageBox()
+
+    message_box.setWindowTitle(error_type)
+    message_box.setMinimumSize(200, 200)
+    if error_type == NOT_FOUND:
+        message_box.setText("Account not found!")
+    elif error_type == ALREADY_EXISTS:
+        message_box.setText("Account already exists!")
+    elif error_type == INVALID_PROTOCOL:
+        message_box.setText("Incorrect information given!")
+    elif error_type == CLIENT_DENIED:
+        message_box.setText("Unable to connect to database!")
+    elif error_type == NOT_ENOUGH_FUNDS:
+        message_box.setText("Not enough money in balance!")
+    else:
+        message_box.setText(error_type)
+
+    message_box.setIcon(QMessageBox.Icon.Critical)
+    message_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    message_box.exec()
+
 class Login(QWidget):
     def __init__(self, login_function):
         self.login_function = login_function
@@ -72,8 +96,10 @@ class Login(QWidget):
         account_number, success = self.login_function(f"'{email}'", f"'{password}'")
 
         if success and account_number != bank_admins.BANK_ADMIN:
+            ACCOUNT_NUMBER = account_number
             print("Logged In! \n", "Account: ", account_number)
         else:
+            display_error(account_number)
             print(account_number, "\n", success)
         
         self.email_input.clear()
