@@ -8,5 +8,4 @@ login = gui_library.Login(db.login)
 
 if __name__ == "__main__":
     login.show()
-
     Application.exec()
