@@ -1,5 +1,6 @@
 import bank_admins
 import sys
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import *
 from errors import *
 
@@ -11,7 +12,7 @@ class Login(QWidget):
 
         super().__init__()
         self.setWindowTitle("Login")
-        self.setMinimumSize(400, 200)
+        self.setFixedSize(400, 200)
         self.setStyleSheet("""
             QWidget {
                 background-color: #F0F0F0;
@@ -40,25 +41,28 @@ class Login(QWidget):
         """)
 
         layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
 
         email_layout = QVBoxLayout()
         email_label = QLabel("Email:")
-        email_layout.addWidget(email_label)
         self.email_input = QLineEdit()
-        email_layout.addWidget(self.email_input)
-        layout.addLayout(email_layout)
 
         password_layout = QVBoxLayout()
         password_label = QLabel("Password:")
-        password_layout.addWidget(password_label)
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        password_layout.addWidget(self.password_input)
-        layout.addLayout(password_layout)
 
         self.login_button = QPushButton("Login")
         self.login_button.clicked.connect(self.login)
+
+        layout.addLayout(email_layout)
+        layout.addLayout(password_layout)
+
+        email_layout.addWidget(email_label)
+        email_layout.addWidget(self.email_input)
+        password_layout.addWidget(password_label)
+        password_layout.addWidget(self.password_input)
         layout.addWidget(self.login_button)
 
     def login(self):

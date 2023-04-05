@@ -1,2 +1,2 @@
-administrators = {"'Admin'":{"username":"'Admin'", "password":"'bankadmin123'"}}
+administrators = {"'ADMIN'":{"username":"'ADMIN'", "password":"'bankadmin123'"}}
 BANK_ADMIN = "BANK ADMINISTRATOR"
