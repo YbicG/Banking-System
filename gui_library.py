@@ -1,6 +1,7 @@
 import bank_admins
 import database as db
 import sys
+import datetime
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
@@ -49,6 +50,22 @@ def display_success(message):
     message_box.setText(message)
     
     message_box.setIcon(QMessageBox.Icon.Information)
+    message_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    message_box.exec()
+
+def display_message(title, message):
+    message_box = QMessageBox()
+    message_box.setWindowTitle(title)
+    message_box.setText(message)
+    message_box.setIcon(QMessageBox.Icon.Information)
+    message_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    message_box.exec()
+    
+def display_custom_error(title, message):
+    message_box = QMessageBox()
+    message_box.setWindowTitle(title)
+    message_box.setText(message)
+    message_box.setIcon(QMessageBox.Icon.Critical)
     message_box.setStandardButtons(QMessageBox.StandardButton.Ok)
     message_box.exec()
 
@@ -223,7 +240,11 @@ class Homepage(QWidget):
         self.hide()
 
     def settings(self):
-        print("Settings button clicked")
+        global SETTINGS_PAGE
+
+        SETTINGS_PAGE = Settings()
+        SETTINGS_PAGE.show()
+        self.hide()
 
 class Withdraw(QWidget):
     def __init__(self, parent=None):
@@ -438,3 +459,180 @@ class Deposit(QWidget):
             display_error(result)
         
         self.deposit_input.clear()
+
+class Settings(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Settings")
+        self.setFixedSize(400, 400)
+        self.setStyleSheet('''
+            QWidget {
+                background-color: #F0F0F0;
+            }
+
+            QLabel {
+                font-size: 14px;
+                color: #333333;
+            }
+
+            QLineEdit {
+                border: 2px solid #CCCCCC;
+                border-radius: 5px;
+                padding: 8px;
+                font-size: 14px;
+                color: #333333;
+            }
+
+            QPushButton {
+                background-color: #007ACC;
+                color: #FFFFFF;
+                border-radius: 5px;
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            QToolButton {
+                background-color: transparent;
+                border: none;
+                padding: 0px;
+                margin: 0px;
+            }
+            QToolButton:hover {
+                background-color: #CCCCCC;
+            }
+
+            QPushButton:hover {
+                background-color: #0061A7;
+            }
+        ''')
+
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)\
+        
+
+        header = QHBoxLayout()
+
+        title_label = QLabel("Settings")
+        title_label.setFont(QFont("Arial"))
+        title_label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setMargin(100)
+
+        back_button = QToolButton()
+        back_button.setIcon(QIcon("C:\\Users\\CJ Lester\\Downloads\\Code Workspace\\Python\\BankingSystem\\Library\\back_arrow.png"))
+        back_button.clicked.connect(self.back)
+        header.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+
+        form_layout = QFormLayout()
+        form_layout.addWidget(title_label)
+        form_layout.setHorizontalSpacing(3)
+
+        name_label = QLabel("Name:")
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("John Doe")
+
+        form_layout.addRow(name_label, self.name_input)
+
+
+        birthday_label = QLabel("DOB:")
+        self.birthday_input = QLineEdit()
+        self.birthday_input.setPlaceholderText("YYYY-MM-DD")
+        form_layout.addRow(birthday_label, self.birthday_input)
+
+        pin_label = QLabel("PIN:")
+        self.pin_input = QLineEdit()
+        self.pin_input.setPlaceholderText("XXXX")
+        form_layout.addRow(pin_label, self.pin_input)
+
+        email_label = QLabel("Email:")
+        self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("example@domain.com")
+        form_layout.addRow(email_label, self.email_input)
+
+        close_account_label = QLabel("")
+        self.close_account_button = QPushButton("Close Account")
+        self.close_account_button.setStyleSheet("QPushButton { background-color: #E34234; color: #FFFFFF; border-radius: 5px; font-size: 14px; padding: 8px; } QPushButton:hover { background-color: #b82619; }")
+        form_layout.addRow(close_account_label, self.close_account_button)
+        self.close_account_button.clicked.connect(self.close_account)
+
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self.save_changes)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(save_button)
+        button_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+
+        main_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        main_layout.addLayout(form_layout)
+        main_layout.addLayout(button_layout)
+
+    def back(self):
+        global HOME_PAGE
+
+        HOME_PAGE = Homepage()
+        HOME_PAGE.show()
+        self.hide()
+
+    def save_changes(self):
+
+        name = self.name_input.text()
+        birthday = self.birthday_input.text()
+        pin = self.pin_input.text()
+        email = self.email_input.text()
+
+        valid = check_information(name, birthday, pin, email)
+
+        if valid:
+            display_message("Changes Saved", "Your changes have been saved")
+
+    def close_account(self):
+        pass
+
+
+def check_information(name, birthday, pin, email):
+    if name != " " or name != "":
+            try:
+                split = name.split(" ")
+                fname = split[0]
+                lname = split[1]
+            except:
+                display_message("INVALID NAME", "Invalid name! Please use the format: FirstName LastName")
+                return False
+        
+    if birthday != " " or birthday != "":
+        try:
+            split = birthday.split("-")
+            year = int(split[0])
+            month = int(split[1])
+            day = int(split[2])
+
+            if year > 2023 or year < 1910:
+                display_custom_error("INVALID YEAR", "Invalid birth year!")
+                return False
+                
+            if month > 12 or month < 0:
+                display_custom_error("INVALID MONTH", "Invalid birth month!")
+                return False
+                
+            if day > 31 or day < 0:
+                display_custom_error("INVALID DAY", "Invalid birth day!")
+                return False
+                
+        except Exception as e:
+                display_custom_error("INVALID BIRTHDAY", "Invalid birthday format! Please use the format: YYYY-MM-DD")
+                return False
+            
+    if pin != " " or pin != "":
+        if len(pin) != 4:
+            display_custom_error("INVALID PIN", "Invalid pin format! Please use the format: XXXX")       
+            return False
+            
+    if email != " " or email != "":
+        if "@" in email and ".com" in email:
+            pass
+        else:
+            display_custom_error("INVALID EMAIL", "Invalid email format! Please use the format: example@domain.com")      
+            return False
+        
+    return True
