@@ -144,7 +144,6 @@ class Login(QWidget):
 
             self.email_input.clear()
             self.password_input.clear()
-            print("Logged In! \n", "Account: ", account_number)
 
             HOME_PAGE = Homepage()
             HOME_PAGE.show()
@@ -193,14 +192,12 @@ class Homepage(QWidget):
         self.setLayout(layout)
 
         ## GETTING THE BALANCE
-        print(ACCOUNT_NUMBER)
         balance, success = db.get_from_user(ACCOUNT_NUMBER, "balance")
 
         if success:
 
             global BALANCE
             BALANCE = balance[0]
-            print(balance)
             balance = "Balance: $"+str(balance[0])
 
         else:
@@ -465,7 +462,7 @@ class Settings(QWidget):
         super().__init__()
 
         self.setWindowTitle("Settings")
-        self.setFixedSize(400, 400)
+        self.setFixedSize(400, 550)
         self.setStyleSheet('''
             QWidget {
                 background-color: #F0F0F0;
@@ -508,25 +505,48 @@ class Settings(QWidget):
         ''')
 
         main_layout = QVBoxLayout()
-        self.setLayout(main_layout)\
+        self.setLayout(main_layout)
         
 
         header = QHBoxLayout()
 
-        title_label = QLabel("Settings")
+        title_label = QLabel("Change Settings")
         title_label.setFont(QFont("Arial"))
         title_label.setStyleSheet("font-size: 30px; font-weight: bold;")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setMargin(100)
+        title_label.setMargin(50)
 
         back_button = QToolButton()
         back_button.setIcon(QIcon("C:\\Users\\CJ Lester\\Downloads\\Code Workspace\\Python\\BankingSystem\\Library\\back_arrow.png"))
         back_button.clicked.connect(self.back)
         header.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-
+        main_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        
         form_layout = QFormLayout()
         form_layout.addWidget(title_label)
         form_layout.setHorizontalSpacing(3)
+
+        fname, success = db.get_from_user(ACCOUNT_NUMBER, "first_name")
+        lname, success = db.get_from_user(ACCOUNT_NUMBER, "last_name")
+        em, success = db.get_from_user(ACCOUNT_NUMBER, "email")
+        dob, success = db.get_from_user(ACCOUNT_NUMBER, "date_of_birth")
+
+        if success:
+            name = QLabel("Name: "+fname[0]+" "+lname[0])
+            name.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            main_layout.addWidget(name)
+
+            email = QLabel("Email: "+em[0])
+            email.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            main_layout.addWidget(email)
+
+            dob = QLabel("Birthday: "+str(dob[0].year)+"-"+str(dob[0].month)+"-"+str(dob[0].day))
+            dob.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            main_layout.addWidget(dob)
+
+        account_number = QLabel("Account Number: "+str(ACCOUNT_NUMBER))
+        account_number.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        main_layout.addWidget(account_number)
 
         name_label = QLabel("Name:")
         self.name_input = QLineEdit()
@@ -563,7 +583,6 @@ class Settings(QWidget):
         button_layout.addWidget(save_button)
         button_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        main_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         main_layout.addLayout(form_layout)
         main_layout.addLayout(button_layout)
 
@@ -584,14 +603,64 @@ class Settings(QWidget):
         valid = check_information(name, birthday, pin, email)
 
         if valid:
+            global HOME_PAGE
 
-            # RUN SAVE SCRIPT
-            display_message("Changes Saved", "Your changes have been saved")
+            success = False
+            result = "NO CHANGES MADE"
+
+            text, boolean = QInputDialog.getText(None, "Pin", "Enter your pin:")
+
+            if boolean:
+
+                try:
+                    int(text)
+                except:
+                    display_error(WRONG_DATA_TYPE)
+                    return
+                
+                p, s = db.get_from_user(ACCOUNT_NUMBER, "pin")
+
+                if s:
+
+                    if int(p[0]) == int(text):
+                        pass
+                    else:
+                        display_custom_error("UNAUTHORIZED", "Incorrect pin number!")
+                        return
+                else:
+                    display_error(p)
+                    return 
+
+            if len(name) != 0:
+
+                fname = name.split(" ")[0]
+                lname = name.split(" ")[1]
+
+                result, success = db.save_to_user(ACCOUNT_NUMBER, "first_name", f"'{fname}'")
+                result, success = db.save_to_user(ACCOUNT_NUMBER, "last_name", f"'{lname}'")
+
+            if len(birthday) != 0:
+                result, success = db.save_to_user(ACCOUNT_NUMBER, "date_of_birth", f"'{birthday}'")
+            if len(str(pin)) != 0:
+                result, success = db.save_to_user(ACCOUNT_NUMBER, "pin", pin)
+            if len(email) != 0:
+                result, success = db.save_to_user(ACCOUNT_NUMBER, "email", f"'{email}'")
+
+            
+            if success:   
+                display_message("Changes Saved", "Your changes have been saved")
+            else:
+                display_error(result)
+
+            HOME_PAGE = Homepage()
+            HOME_PAGE.show()
+            self.hide()
+
 
     def close_account(self):
         pass
 
-
+print
 def check_information(name, birthday, pin, email):
     if len(name) != 0:
             try:
@@ -599,7 +668,7 @@ def check_information(name, birthday, pin, email):
                 fname = split[0]
                 lname = split[1]
             except:
-                display_message("INVALID NAME", "Invalid name! Please use the format: FirstName LastName")
+                display_message("INVALID NAME", "Invalid name! Please use the format: first_name last_name (John Doe)")
                 return False
         
     if len(birthday) != 0:
@@ -625,14 +694,24 @@ def check_information(name, birthday, pin, email):
                 display_custom_error("INVALID BIRTHDAY", "Invalid birthday format! Please use the format: YYYY-MM-DD")
                 return False
             
-    if len(pin) != 0:
-        if len(pin) != 4:
+    if len(str(pin)) != 0:
+        try:
+            pin = int(pin)
+        except:
+            display_custom_error(WRONG_DATA_TYPE, "Invalid pin data type! Please use the format: XXXX with ONLY numbers!") 
+            return False
+
+        if len(str(pin)) != 4:
             display_custom_error("INVALID PIN", "Invalid pin format! Please use the format: XXXX")       
             return False
             
     if len(email) != 0:
-        if "@" in email and ".com" in email:
-            pass
+        if "@" in email and ".com" in email:    
+            result, success = db.get_email(email)
+
+            if success and result != None:
+                display_custom_error(ALREADY_EXISTS, "Email already exists!")      
+                return False
         else:
             display_custom_error("INVALID EMAIL", "Invalid email format! Please use the format: example@domain.com")      
             return False
