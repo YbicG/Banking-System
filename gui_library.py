@@ -584,6 +584,8 @@ class Settings(QWidget):
         valid = check_information(name, birthday, pin, email)
 
         if valid:
+
+            # RUN SAVE SCRIPT
             display_message("Changes Saved", "Your changes have been saved")
 
     def close_account(self):
@@ -591,7 +593,7 @@ class Settings(QWidget):
 
 
 def check_information(name, birthday, pin, email):
-    if name != " " or name != "":
+    if len(name) != 0:
             try:
                 split = name.split(" ")
                 fname = split[0]
@@ -600,7 +602,7 @@ def check_information(name, birthday, pin, email):
                 display_message("INVALID NAME", "Invalid name! Please use the format: FirstName LastName")
                 return False
         
-    if birthday != " " or birthday != "":
+    if len(birthday) != 0:
         try:
             split = birthday.split("-")
             year = int(split[0])
@@ -623,12 +625,12 @@ def check_information(name, birthday, pin, email):
                 display_custom_error("INVALID BIRTHDAY", "Invalid birthday format! Please use the format: YYYY-MM-DD")
                 return False
             
-    if pin != " " or pin != "":
+    if len(pin) != 0:
         if len(pin) != 4:
             display_custom_error("INVALID PIN", "Invalid pin format! Please use the format: XXXX")       
             return False
             
-    if email != " " or email != "":
+    if len(email) != 0:
         if "@" in email and ".com" in email:
             pass
         else:
