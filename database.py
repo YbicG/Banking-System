@@ -68,6 +68,7 @@ def create_table():
         """
         with connection.cursor() as cursor:
             cursor.execute(query)
+
     except error as e:
         print(e)
 

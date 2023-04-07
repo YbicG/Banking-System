@@ -640,7 +640,7 @@ class Settings(QWidget):
             success = False
             result = "NO CHANGES MADE"
 
-            text, boolean = QInputDialog.getText(None, "Pin", "Enter your pin:")
+            text, boolean = QInputDialog.getText(None, "Pin", "Enter your pin:", echo=QLineEdit.EchoMode.Password)
 
             if boolean:
 
@@ -691,7 +691,7 @@ class Settings(QWidget):
 
     def close_account(self):
 
-        text, boolean = QInputDialog.getText(None, "Pin", "Enter your pin:")
+        text, boolean = QInputDialog.getText(None, "Pin", "Enter your pin:", echo=QLineEdit.EchoMode.Password)
 
         if boolean:
 
@@ -718,6 +718,11 @@ class Settings(QWidget):
 
         if success:
             display_success("Account Deleted!")
+            global LOGIN
+            
+            LOGIN = Login(db.login)
+            LOGIN.show()
+            self.hide()
 
 def check_information(name, birthday, pin, email):
     if len(name) != 0:
@@ -950,6 +955,7 @@ class Create(QWidget):
         passsword_label = QLabel("Password:")
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("example123")
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         form_layout.addRow(passsword_label, self.password_input)
 
         ssn_label = QLabel("SSN:")
@@ -1082,7 +1088,7 @@ class Modify(QWidget):
         super().__init__()
 
         self.setWindowTitle("Modify")
-        self.setFixedSize(400, 450)
+        self.setFixedSize(400, 400)
         self.setStyleSheet('''
             QWidget {
                 background-color: #F0F0F0;
@@ -1134,10 +1140,14 @@ class Modify(QWidget):
         title_label.setFont(QFont("Arial"))
         title_label.setStyleSheet("font-size: 30px; font-weight: bold;")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setMargin(50)
+        title_label.setMargin(10)
 
         back_button = QToolButton()
         back_button.setIcon(QIcon("C:\\Users\\CJ Lester\\Downloads\\Code Workspace\\Python\\BankingSystem\\Library\\back_arrow.png"))
+        size = QSize()
+        size.setHeight(35)
+        size.setWidth(35)
+        back_button.setIconSize(size)
         back_button.clicked.connect(self.back)
         header.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         main_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
@@ -1174,23 +1184,11 @@ class Modify(QWidget):
         self.email_input.setPlaceholderText("example@domain.com")
         form_layout.addRow(email_label, self.email_input)
 
-        close_account_label = QLabel("")
-        self.close_account_button = QPushButton("Close Account")
-        self.close_account_button.setStyleSheet("QPushButton { background-color: #E34234; color: #FFFFFF; border-radius: 5px; font-size: 14px; padding: 8px; } QPushButton:hover { background-color: #b82619; }")
-        form_layout.addRow(close_account_label, self.close_account_button)
-        self.close_account_button.clicked.connect(self.close_account)
-        
-        button_layout = QHBoxLayout()
-    
-        button_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
-
         save_button = QPushButton("Save")
         save_button.clicked.connect(self.save_changes)
-
-        button_layout.addWidget(save_button)
+        form_layout.addWidget(save_button)
 
         main_layout.addLayout(form_layout)
-        main_layout.addLayout(button_layout)
 
     def back(self):
         global ADMIN_PAGE
@@ -1243,8 +1241,8 @@ class Delete(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Modify")
-        self.setFixedSize(400, 450)
+        self.setWindowTitle("Delete")
+        self.setFixedSize(400, 200)
         self.setStyleSheet('''
             QWidget {
                 background-color: #F0F0F0;
@@ -1292,26 +1290,28 @@ class Delete(QWidget):
 
         header = QHBoxLayout()
 
-        title_label = QLabel("Modify Account")
+        title_label = QLabel("Delete Account")
         title_label.setFont(QFont("Arial"))
         title_label.setStyleSheet("font-size: 30px; font-weight: bold;")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setMargin(50)
 
         back_button = QToolButton()
         back_button.setIcon(QIcon("C:\\Users\\CJ Lester\\Downloads\\Code Workspace\\Python\\BankingSystem\\Library\\back_arrow.png"))
+        size = QSize()
+        size.setHeight(35)
+        size.setWidth(35)
+        back_button.setIconSize(size)
         back_button.clicked.connect(self.back)
         header.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         main_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         
         form_layout = QFormLayout()
         form_layout.addWidget(title_label)
-        form_layout.setHorizontalSpacing(3)
+        form_layout.setHorizontalSpacing(2)
 
-        account_number = QLabel("Account Number:")
         self.account_input = QLineEdit()
-        self.account_input.setPlaceholderText("XXXXXXXXX")
-        form_layout.addRow(account_number, self.account_input)
+        self.account_input.setPlaceholderText("Account Number")
+        form_layout.addWidget(self.account_input)
 
         close_account_label = QLabel("")
         self.close_account_button = QPushButton("Close Account")
@@ -1330,21 +1330,21 @@ class Delete(QWidget):
 
     def close_account(self):
 
-        text, boolean = QInputDialog.getText(None, "Pin", "Enter your pin:")
+        text, boolean = QInputDialog.getText(None, "Pin", "Enter your pin:", echo=QLineEdit.EchoMode.Password)
 
         if boolean:
 
             try:
-                int(text)
+                text = int(text)
             except:
                 display_error(WRONG_DATA_TYPE)
                 return
                 
-            p, s = db.get_from_user(ACCOUNT_NUMBER, "pin")
+            p, s = db.get_from_user(int(self.account_input.text()), "pin")
 
             if s:
 
-                if int(p[0]) == int(text):
+                if int(p[0]) == text:
                     pass
                 else:
                     display_custom_error("UNAUTHORIZED", "Incorrect pin number!")
@@ -1353,8 +1353,12 @@ class Delete(QWidget):
                 display_error(p)
                 return 
                 
-        result, success = db.delete_user(int(self.account_input.text()), int(text))
+            result, success = db.delete_user(int(self.account_input.text()), text)
 
-        if success:
-            display_success("Account Deleted!")
+            if success:
+                global ADMIN_PAGE
+                display_success("Account Deleted!")
+                ADMIN_PAGE = AdminGUI()
+                ADMIN_PAGE.show()
+                self.hide()
     
