@@ -1,10 +1,9 @@
 import random
 import os
 import hashlib
-import errors
-import bank_admins
-from mysql.connector import connect, Error as error
-from config import config
+from Types import errors, bank_admins
+from mysql.connector import Error, connect
+from Cfg.config import config
 
 # ENCRYPTION FUNCTIONS
 def hash_str(string: str):
@@ -69,7 +68,7 @@ def create_table():
         with connection.cursor() as cursor:
             cursor.execute(query)
 
-    except error as e:
+    except Error as e:
         print(e)
 
 def create_user(first_name, last_name, email, password, social_security_number, date_of_birth, pin):
@@ -115,7 +114,7 @@ def create_user(first_name, last_name, email, password, social_security_number, 
 
             return uid, True
         
-    except error as e:
+    except Error as e:
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -148,7 +147,7 @@ def save_to_user(account_number, information_to_change, value):
 
         return None, True
         
-    except error as e:
+    except Error as e:
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -183,7 +182,7 @@ def get_from_user(account_number, information_to_get):
 
         return return_val, True
         
-    except error as e:
+    except Error as e:
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -220,7 +219,7 @@ def get_email(email):
 
         return return_val, True
         
-    except error as e:
+    except Error as e:
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -268,7 +267,7 @@ def login(email, password):
         else:
             return errors.INVALID_PROTOCOL, False
         
-    except error as e:
+    except Error as e:
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -314,7 +313,7 @@ def withdraw(account_number, value):
 
         return None, True
         
-    except error as e:
+    except Error as e:
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -354,7 +353,7 @@ def deposit(account_number, value):
 
         return value, True
         
-    except error as e: 
+    except Error as e: 
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -394,7 +393,7 @@ def delete_user(account_number, pin):
             else:
                 return "DELETED", True
         
-    except error as e:
+    except Error as e:
 
         print(e)
         return errors.CLIENT_DENIED, False
@@ -424,6 +423,6 @@ def print_users():
         for i in cursor.fetchall():
             print(i)
 
-    except error as e:
+    except Error as e:
         print(e)
 # END OF EXTRA FUNCTIONS

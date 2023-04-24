@@ -1,11 +1,12 @@
-import bank_admins
+from Types.errors import *
+from Types import bank_admins
+
 import database as db
 import sys
 import datetime
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
-from errors import *
 
 Application = QApplication(sys.argv)
 
@@ -1004,9 +1005,11 @@ class Create(QWidget):
 
             result, success = db.create_user(f"'{fname}'", f"'{lname}'", f"'{email}'", f"'{password}'", f"'{ssn}'", f"'{birthday}'", f"'{pin}'")
 
-            if success:   
+            if success:
+                global ADMIN_PAGE
+                
                 display_message("Account Creation", "Account Created! \nAccount Number: "+str(result))
-                ADMIN_PAGE = Homepage()
+                ADMIN_PAGE = AdminGUI()
                 ADMIN_PAGE.show()
                 self.hide()
             else:
